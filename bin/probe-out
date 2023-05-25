@@ -1,35 +1,183 @@
 #!/bin/sh
 
-INTERFACE=${PROBE_INTERFACE:-"eth3"}
-ARGS=${PROBE_SRC:-"xaviama.dank-me.me"}
+INTERFACE=${PROBE_INTERFACE:-"lo"}
+ARGS=${PROBE_SRC:-"127.0.0.1"}
 COLOR=${PROBE_COLOR:-1}
 ROOT=${PROBE_ROOT:-1}
+RAINBOW=${PROBE_RAINBOW:-1}
 
 if [ "$(echo $ROOT)" == "1" ] && ! [ "$(whoami)" == "root" ]; then
-	echo "Command must be executed by root!"
+	echo "Command must be executed by a root user!"
 	exit 1
 fi
 
-pipe=/tmp/tcpdump_output
+SCRIPT_TYPE=$(basename "$0" | rev | cut -f 1 -d "-" | rev)
+
+if [ "$INTERFACE" == "lo" ] && ! [ -n "$PROBE_INTERFACE" ]; then
+	INTERFACE=$(ip -o link show | awk '{if (NR>1 && $3 != "lo:") print $2}' | cut -f 1 -d ":" | head -n 1)
+	if [ "$INTERFACE" == "" ]; then
+		INTERFACE="lo"
+	fi
+fi
+
+if [ "$ARGS" == "127.0.0.1" ] && ! [ -n "$PROBE_SRC" ]; then
+	ARGS="$(hostname)"
+	if [ "$ARGS" == "" ]; then
+		ARGS="127.0.0.1"
+	fi
+fi
+
+if [ -n "$1" ]; then
+	case "$1" in
+		"log")
+			if ! [ -n "$2" ]; then
+				echo "Missing log ID."
+				exit 404
+			fi
+			work_path="$HOME/.cache/xaviama/tcp-probe"
+			if [ -d "$work_path" ]; then
+				if ! [ -f "$work_path/probe-tcp-${SCRIPT_TYPE}-log-$2" ]; then
+					echo "Log ID not found."
+					exit 404
+				fi
+				cat "$work_path/probe-tcp-${SCRIPT_TYPE}-log-$2"
+				exit 0
+			elif [ -d "/tmp" ]; then
+				if ! [ -f "/tmp/probe-tcp-${SCRIPT_TYPE}-log-$2" ]; then
+					echo "Log ID not found."
+					exit 404
+				fi
+				cat "/tmp/probe-tcp-${SCRIPT_TYPE}-log-$2"
+				exit 0
+			else
+				echo "Based paths not found..."
+				exit 404
+			fi
+			;;
+		"rmlog")
+			if ! [ -n "$2" ]; then
+				echo "Missing log ID."
+				exit 404
+			fi
+			work_path="$HOME/.cache/xaviama/tcp-probe"
+			if [ -d "$work_path" ]; then
+				if ! [ -f "$work_path/probe-tcp-${SCRIPT_TYPE}-log-$2" ]; then
+					echo "Log ID not found."
+					exit 404
+				fi
+				rm -f "$work_path/probe-tcp-${SCRIPT_TYPE}-log-$2"
+				exit 0
+			elif [ -d "/tmp" ]; then
+				if ! [ -f "/tmp/probe-tcp-${SCRIPT_TYPE}-log-$2" ]; then
+					echo "Log ID not found."
+					exit 404
+				fi
+				rm -f "/tmp/probe-tcp-${SCRIPT_TYPE}-log-$2"
+				exit 0
+			else
+				echo "Based paths not found..."
+				exit 404
+			fi
+			;;
+		"rmlogs")
+			work_path="$HOME/.cache/xaviama/tcp-probe"
+			if [ -d "$work_path" ]; then
+				for element in $(find "$work_path" -type f -name '*'"${SCRIPT_TYPE}"'-log*'); do
+					rm -f "$element"
+				done
+				exit 0
+			fi
+			if [ -d "/tmp" ]; then
+				for element in $(find "/tmp" -type f -name '*'"${SCRIPT_TYPE}"'-log*'); do
+					rm -f "$element"
+				done
+				exit 0
+			fi
+			;;
+		"help")
+			echo "Help output of probe-${SCRIPT_TYPE}:"
+			echo '	Environment variables:'
+			echo '	- `PROBE_COLOR=0/1 | default 1` - set colors for a console'
+			echo '	- `PROBE_SRC=<string> | default 127.0.0.1` - set source destination (for `probe-out`)'
+			echo '	- `PROBE_DST=<string> | default 127.0.0.1` - set destination (for `probe-in`)'
+			echo '	- `PROBE_INTERFACE=<string> | default eth3` - set interface on which `tcpdump` should listen on'
+			echo '	- `PROBE_ROOT=0/1 | default 1` - check if running as root'
+			echo '	- `PROBE_RAINBOW=0/1 | default 1` - enable rainbow texts'
+			echo ""
+			echo '	Commands:'
+			echo '	- `log <ID>` - show log file from ID'
+			echo '	- `rmlog <ID>` - remove specific log'
+			echo '	- `rmlogs` - remove all logs'
+			echo '	- `help` - show help output'
+			echo ""
+			echo '© 2023 Chimmie Firefly | Akini License 3.1'
+			exit 0
+			;;
+		*)
+			echo "Unknown command!"
+			echo "	Type \`$(realpath $0) help\` for help."
+			exit 404
+			;;
+	esac
+fi
+
+export time_boot="$(date +%s)"
+
+if [ -d "$HOME" ]; then
+	if ! [ -d "$HOME"/.cache/xaviama/tcp-probe ]; then
+		mkdir -p "$HOME"/.cache/xaviama/tcp-probe
+	fi
+	for pids in $(find "$HOME/.cache/xaviama/tcp-probe" -type f -name '*'"${SCRIPT_TYPE}"'-pid*'); do
+		actual_pid=$(cat "$pids")
+		process_name=$(ps -p $actual_pid -o comm= | grep -oE '[^/]+$')
+
+		if [ -n "$process_name" ]; then
+			if ! [ "$process_name" == "probe-out" ]; then
+				old_date_pid=$(echo "$pids" | rev | cut -f 1 -d "-" | rev)
+				rm -f "$HOME/.cache/xaviama/tcp-probe/probe-tcp-${SCRIPT_TYPE}-pipe-$old_date_pid"
+				rm -f "$pids"
+			fi
+		else
+			old_date_pid=$(echo "$pids" | rev | cut -f 1 -d "-" | rev)
+			rm -f "$HOME/.cache/xaviama/tcp-probe/probe-tcp-${SCRIPT_TYPE}-pipe-$old_date_pid"
+			rm -f "$pids"
+		fi
+	done
+	for logs in $(find "$HOME/.cache/xaviama/tcp-probe" -type f -name '*log*'); do
+		date_engine=$(($(echo "$logs" | rev | cut -f 1 -d "-" | rev)))
+		date_actual=$(($time_boot))
+		division=0
+		let "division = date_actual - date_engine"
+		if [ $division -gt 86400 ]; then
+			rm -f "$logs"
+		fi
+	done
+	export shell_pid="$HOME/.cache/xaviama/tcp-probe/probe-tcp-${SCRIPT_TYPE}-pid-$time_boot"
+	export pipe="$HOME/.cache/xaviama/tcp-probe/probe-tcp-${SCRIPT_TYPE}-pipe-$time_boot"
+	export logging="$HOME/.cache/xaviama/tcp-probe/probe-tcp-${SCRIPT_TYPE}-log-$time_boot"
+else
+	export shell_pid="/tmp/probe-tcp-${SCRIPT_TYPE}-pid-$time_boot"
+	export pipe="/tmp/probe-tcp-${SCRIPT_TYPE}-pipe-$time_boot"
+	export logging="/tmp/probe-tcp-${SCRIPT_TYPE}-log-$time_boot"
+fi
+
+echo "$$" > "$shell_pid"
 mkfifo "$pipe"
+touch "$logging"
+
+exec 3> "$logging"
 
 clear
 
 function shutdown() {
 	kill -9 "$tcpdump_pid"
 	rm -f "$pipe"
+	rm -f "$shell_pid"
 	echo "${BCyan}> ${BRed}Shutting down!${NC}"
 	exit 0
 }
 
 trap "shutdown" SIGTERM SIGINT ERR
-
-tcpdump -i ${INTERFACE} -n src ${ARGS} | cut -d " " -f 5 | cut -d ":" -f 1 > "$pipe" &
-
-export tcpdump_pid=$!
-
-export TCP_LINKS=()
-export TCP_AMOUNT=()
 
 function load_colors() {
     if [ $COLOR == 1 ]; then
@@ -124,22 +272,62 @@ function rainbow() {
 	if [ $COLOR == 0 ]; then
 		echo "$1"
 	else
-		input_text="$1"
-		output_text=""
-		# Loop over each character in the string
-		for (( i=0; i<${#input_text}; i++ )); do
-			# Access each character using parameter expansion
-			current_char="${input_text:i:1}"
-			color_bow
-			output_text="${output_text}${!cbow_array[$cbow]}${current_char}"
-		done
-		output_text="${output_text}${NC}"
-		echo "$output_text"
+		if [ $RAINBOW == 0 ]; then
+			echo "${BCyan}$1"
+		else
+			input_text="$1"
+			output_text=""
+			# Loop over each character in the string
+			for (( i=0; i<${#input_text}; i++ )); do
+				# Access each character using parameter expansion
+				current_char="${input_text:i:1}"
+				color_bow
+				output_text="${output_text}${!cbow_array[$cbow]}${current_char}"
+			done
+			output_text="${output_text}${NC}"
+			echo "$output_text"
+		fi
 	fi
 }
 
+echo "${BCyan}> ${BGreen}Session ID${BWhite}: ${BRed}${time_boot}"
+echo "${BCyan}> ${BGreen}Config${BWhite}: ${NC}"
+echo "${BCyan}>> interface - ${BGreen}${INTERFACE}"
+echo "${BCyan}>> hostname~ - ${BGreen}${ARGS}"
+echo "${BCyan}>> Check root - ${BGreen}${ROOT}"
+echo "${BCyan}>> Colored - ${BGreen}${COLOR}"
+echo "${BCyan}>> Type - ${BGreen}${SCRIPT_TYPE}"
+echo "${BCyan}> ${BYellow}Please wait${BWhite}, $(rainbow 'loading interface(s)...')${BRed}"
 
-echo "${BCyan}> ${BYellow}Please wait${BWhite}, $(rainbow 'loading interface(s)...')"
+catch_dump=5
+worker_type="${BRed}"'[Outgoing]'
+worker_type_plain='[Outgoing]'
+type_dump="src"
+case "${SCRIPT_TYPE}" in
+	"out")
+		catch_dump=5
+		worker_type="${BRed}"'[Outgoing]'
+		worker_type_plain='[Outgoing]'
+		type_dump="src"
+		;;
+	"in")
+		catch_dump=3
+		worker_type="${BGreen}"'[Incoming]'
+		worker_type_plain='[Incoming]'
+		type_dump="dst"
+		;;
+	*)
+		echo "${BCyan}> ${BRed}Unknown process type!"
+		exit 0
+		;;
+esac
+
+tcpdump -i ${INTERFACE} -n ${type_dump} ${ARGS} | cut -d " " -f ${catch_dump} | cut -d ":" -f 1 > "$pipe" &
+
+export tcpdump_pid=$!
+
+export TCP_LINKS=()
+export TCP_AMOUNT=()
 
 function find_array() {
 	index=-1
@@ -176,7 +364,7 @@ center=0
 let "center = tttx / 2"
 center=$(($(printf "%.0f" $center)))
 export center
-ip_label='IP List [Outgoing]'
+ip_label="ID:${time_boot}"' IP List '"${worker_type_plain}"
 ip_label_size=${#ip_label}
 ip_label_size_half=0
 let "ip_label_size_half = ip_label_size / 2"
@@ -186,10 +374,10 @@ align_center_text=0
 let "align_center_text = center - ip_label_size_half - 1"
 unset ip_label_size
 unset ip_label_size_half
-export ip_label="${On_Blue}"$(spacing $align_center_text)"${BCyan}IP List${NC} ${On_Blue}${BRed}[Outgoing]${NC}${On_Blue}$(spacing $align_center_text)${NC}"
+export ip_label="${On_Blue}"$(spacing $align_center_text)"${BGreen}ID${BWhite}:${BRed}${time_boot}${NC} ${BCyan}IP List${NC} ${On_Blue}${worker_type}${NC}${On_Blue}$(spacing $align_center_text)${NC}"
 unset align_center_text
 
-export end_label=" ${BPurple}By Chimmie Firefly, uwu${NC}"
+export end_label=" ${BPurple}By Chimmie Firefly ${BWhite}|${BRed} OwO ${BWhite}|${BCyan} Config${BWhite}: ${Green}${INTERFACE} ${BWhite}-${Green} ${ARGS} ${BWhite}-${Green} Root-${ROOT}${BGreen}"
 
 function window_resize() {
 	# Get terminal width (number of columns)
@@ -205,7 +393,7 @@ function window_resize() {
 	let "center = tttx / 2"
 	center=$(($(printf "%.0f" $center)))
 	export center
-	ip_label='IP List [Outgoing]'
+	ip_label="ID:${time_boot}"' IP List '"${worker_type_plain}"
 	ip_label_size=${#ip_label}
 	ip_label_size_half=0
 	let "ip_label_size_half = ip_label_size / 2"
@@ -215,7 +403,7 @@ function window_resize() {
 	let "align_center_text = center - ip_label_size_half - 1"
 	unset ip_label_size
 	unset ip_label_size_half
-	export ip_label="${On_Blue}"$(spacing $align_center_text)"${BCyan}IP List${NC} ${On_Blue}${BRed}[Outgoing]${NC}${On_Blue}$(spacing $align_center_text)${NC}"
+	export ip_label="${On_Blue}"$(spacing $align_center_text)"${BGreen}ID${BWhite}:${BRed}${time_boot}${NC} ${BCyan}IP List${NC} ${On_Blue}${worker_type}${NC}${On_Blue}$(spacing $align_center_text)${NC}"
 	unset align_center_text
 
 }
