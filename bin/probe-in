@@ -1,5 +1,10 @@
 #!/bin/sh
 
+if ! [ "$(whoami)" == "root" ]; then
+	echo "Command must be executed by root!"
+	exit 1
+fi
+
 INTERFACE=${PROBE_INTERFACE:-"eth3"}
 ARGS=${PROBE_DST:-"xaviama.dank-me.me"}
 COLOR=${PROBE_COLOR:-1}
@@ -18,7 +23,7 @@ function shutdown() {
 
 trap "shutdown" SIGTERM SIGINT ERR
 
-tcpdump -i ${INTERFACE} -n dst ${ARGS} 2>/dev/null 3>&2 | cut -d " " -f 3 | cut -d ":" -f 1 > "$pipe" &
+tcpdump -i ${INTERFACE} -n dst ${ARGS} | cut -d " " -f 3 | cut -d ":" -f 1 > "$pipe" &
 
 export tcpdump_pid=$!
 
