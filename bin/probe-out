@@ -1,13 +1,14 @@
 #!/bin/sh
 
-if ! [ "$(whoami)" == "root" ]; then
-	echo "Command must be executed by root!"
-	exit 1
-fi
-
 INTERFACE=${PROBE_INTERFACE:-"eth3"}
 ARGS=${PROBE_SRC:-"xaviama.dank-me.me"}
 COLOR=${PROBE_COLOR:-1}
+ROOT=${PROBE_ROOT:-1}
+
+if [ "$(echo $ROOT)" == "1" ] && ! [ "$(whoami)" == "root" ]; then
+	echo "Command must be executed by root!"
+	exit 1
+fi
 
 pipe=/tmp/tcpdump_output
 mkfifo "$pipe"
