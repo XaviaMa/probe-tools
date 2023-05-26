@@ -283,39 +283,39 @@ export cbow_enby_bg=("On_Yellow" "On_White" "On_Purple" "On_Black")
 
 # Bisexual Flag
 export cbow_bisexual=("BPurple" "BPurple" "Purple" "BBlue" "BBlue")
-export cbow_bisexual=("On_Purple" "On_Purple" "On_Purple" "On_Blue" "On_Blue")
+export cbow_bisexual_bg=("On_Purple" "On_Purple" "On_Purple" "On_Blue" "On_Blue")
 
 # Lesbian Flag
 export cbow_lesbian=("BRed" "Red" "BYellow" "BWhite" "Purple" "BPurple" "BPurple")
-export cbow_lesbian=("On_Red" "On_Red" "On_Yellow" "On_White" "On_Purple" "On_Purple" "On_Purple")
+export cbow_lesbian_bg=("On_Red" "On_Red" "On_Yellow" "On_White" "On_Purple" "On_Purple" "On_Purple")
 
 # Polysexual Flag
 export cbow_polysexual=("BPurple" "Green" "BCyan")
-export cbow_polysexual=("On_Purple" "On_Green" "On_Cyan")
+export cbow_polysexual_bg=("On_Purple" "On_Green" "On_Cyan")
 
 # Asexual Flag
 export cbow_asexual=("Black" "BBlack" "BWhite" "Purple")
-export cbow_asexual=("On_Black" "On_Black" "On_White" "On_Purple")
+export cbow_asexual_bg=("On_Black" "On_Black" "On_White" "On_Purple")
 
 # Pansexual Flag
 export cbow_pansexual=("BPurple" "Yellow" "BCyan")
-export cbow_pansexual=("On_Purple" "On_Yellow" "On_Cyan")
+export cbow_pansexual_bg=("On_Purple" "On_Yellow" "On_Cyan")
 
 # Queer Flag
 export cbow_queer=("BRed" "Red" "BYellow" "BGreen" "BBlue" "Purple")
-export cbow_queer=("On_Red" "On_Red" "On_Yellow" "On_Green" "On_Blue" "On_Purple")
+export cbow_queer_bg=("On_Red" "On_Red" "On_Yellow" "On_Green" "On_Blue" "On_Purple")
 
 # Aromantic Flag
 export cbow_aromantic=("BGreen" "Green" "BWhite" "BBlack" "Black")
-export cbow_aromantic=("On_Green" "On_Green" "On_White" "On_Black" "On_Black")
+export cbow_aromantic_bg=("On_Green" "On_Green" "On_White" "On_Black" "On_Black")
 
 # Aroace Flag
 export cbow_aroace=("Yellow" "BYellow" "BWhite" "BCyan" "Cyan")
-export cbow_aroace=("On_Yellow" "On_Yellow" "On_White" "On_Cyan" "On_Cyan")
+export cbow_aroace_bg=("On_Yellow" "On_Yellow" "On_White" "On_Cyan" "On_Cyan")
 
 # Agender Flag
 export cbow_agender=("Black" "BBlack" "BWhite" "Green" "BWhite" "BBlack" "Black")
-export cbow_agender=("On_Black" "On_Black" "On_White" "On_Green" "On_White" "On_Black" "On_Black")
+export cbow_agender_bg=("On_Black" "On_Black" "On_White" "On_Green" "On_White" "On_Black" "On_Black")
 
 # Genderfluid Flag
 export cbow_genderfluid=("BPurple" "BWhite" "Purple" "Black" "Blue")
