@@ -15,6 +15,11 @@ if [ "$(echo $ROOT)" == "1" ] && ! [ "$(whoami)" == "root" ]; then
 	exit 1
 fi
 
+if ! command -v tcpdump &>/dev/null; then
+	echo "Missing tcpdump program. Please install it."
+	exit 2
+fi
+
 SCRIPT_TYPE=$(basename "$0" | rev | cut -f 1 -d "-" | rev)
 
 if [ "$INTERFACE" == "lo" ] && ! [ -n "$PROBE_INTERFACE" ]; then
@@ -31,7 +36,7 @@ if [ "$ARGS" == "127.0.0.1" ] && ! [ -n "$PROBE_SRC" ]; then
 	fi
 fi
 
-export color_schemes=("rainbow" "trans" "queer" "enby" "pansexual" "polysexual" "aroace" "asexual" "aromantic" "agender" "lesbian" "bisexual" "genderfluid")
+export color_schemes=("rainbow" "trans" "queer" "enby" "pansexual" "polysexual" "aroace" "asexual" "aromantic" "agender" "lesbian" "bisexual" "genderfluid" "white" "cyan" "green" "red" "yellow" "black")
 
 if [ -n "$1" ]; then
 	case "$1" in
@@ -187,11 +192,15 @@ exec 3> "$logging"
 
 clear
 
-function shutdown() {
+function clean_up() {
 	kill -9 "$tcpdump_pid"
 	rm -f "$pipe"
 	rm -f "$shell_pid"
 	echo "${BCyan}> ${BRed}Shutting down!${NC}"
+}
+
+function shutdown() {
+	clean_up
 	exit 0
 }
 
@@ -273,63 +282,278 @@ function load_colors() {
 
 load_colors
 
+function rgb_engine() {
+	echo $'\e[38;2;'$1';'$2';'$3'm'
+}
+
+
+function rgb_engine_bg() {
+	r=$1
+	g=$2
+	b=$3
+	if [ $r -gt 50 ]; then
+		let "r = r - 50"
+	fi
+	if [ $g -gt 50 ]; then
+		let "g = g - 50"
+	fi
+	if [ $b -gt 50 ]; then
+		let "b = b - 50"
+	fi
+	echo $'\e[48;2;'$r';'$g';'$b'm'
+}
+
+function flags_rgb() {
+	if [ "$COLOR" == "1" ]; then
+		export FSky="$(rgb_engine 92 206 250)"
+		export FPink="$(rgb_engine 243 168 182)"
+		export FWhite="$(rgb_engine 255 255 255)"
+		export FCanaryYellow="$(rgb_engine 252 244 52)"
+		export FLightPurple="$(rgb_engine 154 89 207)"
+		export FDarkGrey="$(rgb_engine 45 43 44)"
+		export FDeepPink="$(rgb_engine 214 2 112)"
+		export FLightEggPlant="$(rgb_engine 154 79 150)"
+		export FSapphire="$(rgb_engine 0 57 169)"
+		export FRedOrange="$(rgb_engine 213 44 1)"
+		export FFadedOrange="$(rgb_engine 252 153 85)"
+		export FPaleMagenta="$(rgb_engine 210 97 163)"
+		export FDeepMagenta="$(rgb_engine 163 2 98)"
+		export FBrightPink="$(rgb_engine 247 29 186)"
+		export FTeaGreen="$(rgb_engine 6 212 104)"
+		export FAzure="$(rgb_engine 27 145 245)"
+		export FBlack="$(rgb_engine 0 0 0)"
+		export FGrey="$(rgb_engine 147 147 147)"
+		export FDarkPurple="$(rgb_engine 100 0 99)"
+		export FStrongPink="$(rgb_engine 253 32 138)"
+		export FSunflowerYellow="$(rgb_engine 255 217 2)"
+		export FWaterBlue="$(rgb_engine 33 176 254)"
+		export FRed="$(rgb_engine 228 0 1)"
+		export FTangerine="$(rgb_engine 254 138 1)"
+		export FSunnyYellow="$(rgb_engine 252 234 0)"
+		export FKelleyGreen="$(rgb_engine 0 127 36)"
+		export FElectricBlue="$(rgb_engine 0 75 254)"
+		export FPurple="$(rgb_engine 115 4 132)"
+		export FMediumGreen="$(rgb_engine 59 163 66)"
+		export FOliveGreen="$(rgb_engine 166 211 120)"
+		export FSilver="$(rgb_engine 168 168 168)"
+		export FDirtyOrange="$(rgb_engine 225 139 0)"
+		export FSunYellow="$(rgb_engine 235 204 0)"
+		export FCoolBlue="$(rgb_engine 97 174 220)"
+		export FDarkSlateBlue="$(rgb_engine 31 54 85)"
+		export FLightSilver="$(rgb_engine 189 194 197)"
+		export FPistachio="$(rgb_engine 181 244 130)"
+		export DCarnationPink="$(rgb_engine 252 115 159)"
+		export FHeliotrope="$(rgb_engine 189 22 213)"
+		export FWarmBlue="$(rgb_engine 50 61 187)"
+
+		export BFSky="$(rgb_engine_bg 92 206 250)"
+		export BFPink="$(rgb_engine_bg 243 168 182)"
+		export BFWhite="$(rgb_engine_bg 255 255 255)"
+		export BFCanaryYellow="$(rgb_engine_bg 252 244 52)"
+		export BFLightPurple="$(rgb_engine_bg 154 89 207)"
+		export BFDarkGrey="$(rgb_engine_bg 45 43 44)"
+		export BFDeepPink="$(rgb_engine_bg 214 2 112)"
+		export BFLightEggPlant="$(rgb_engine_bg 154 79 150)"
+		export BFSapphire="$(rgb_engine_bg 0 57 169)"
+		export BFRedOrange="$(rgb_engine_bg 213 44 1)"
+		export BFFadedOrange="$(rgb_engine_bg 252 153 85)"
+		export BFPaleMagenta="$(rgb_engine_bg 210 97 163)"
+		export BFDeepMagenta="$(rgb_engine_bg 163 2 98)"
+		export BFBrightPink="$(rgb_engine_bg 247 29 186)"
+		export BFTeaGreen="$(rgb_engine_bg 6 212 104)"
+		export BFAzure="$(rgb_engine_bg 27 145 245)"
+		export BFBlack="$(rgb_engine_bg 0 0 0)"
+		export BFGrey="$(rgb_engine_bg 147 147 147)"
+		export BFDarkPurple="$(rgb_engine_bg 100 0 99)"
+		export BFStrongPink="$(rgb_engine_bg 253 32 138)"
+		export BFSunflowerYellow="$(rgb_engine_bg 255 217 2)"
+		export BFWaterBlue="$(rgb_engine_bg 33 176 254)"
+		export BFRed="$(rgb_engine_bg 228 0 1)"
+		export BFTangerine="$(rgb_engine_bg 254 138 1)"
+		export BFSunnyYellow="$(rgb_engine_bg 252 234 0)"
+		export BFKelleyGreen="$(rgb_engine_bg 0 127 36)"
+		export BFElectricBlue="$(rgb_engine_bg 0 75 254)"
+		export BFPurple="$(rgb_engine_bg 115 4 132)"
+		export BFMediumGreen="$(rgb_engine_bg 59 163 66)"
+		export BFOliveGreen="$(rgb_engine_bg 166 211 120)"
+		export BFSilver="$(rgb_engine_bg 168 168 168)"
+		export BFDirtyOrange="$(rgb_engine_bg 225 139 0)"
+		export BFSunYellow="$(rgb_engine_bg 235 204 0)"
+		export BFCoolBlue="$(rgb_engine_bg 97 174 220)"
+		export BFDarkSlateBlue="$(rgb_engine_bg 31 54 85)"
+		export BFLightSilver="$(rgb_engine_bg 189 194 197)"
+		export BFPistachio="$(rgb_engine_bg 181 244 130)"
+		export BFCarnationPink="$(rgb_engine_bg 252 115 159)"
+		export BFHeliotrope="$(rgb_engine_bg 189 22 213)"
+		export BFWarmBlue="$(rgb_engine_bg 50 61 187)"
+	else
+		unset FCyan
+		unset FPink
+		unset FWhite
+		unset FCanaryYellow
+		unset FLightPurple
+		unset FDarkGrey
+		unset FDeepPink
+		unset FLightEggPlant
+		unset FSapphire
+		unset FRedOrange
+		unset FFadedOrange
+		unset FPaleMagenta
+		unset FDeepMagenta
+		unset FBrightPink
+		unset FTeaGreen
+		unset FAzure
+		unset FBlack
+		unset FGrey
+		unset FDarkPurple
+		unset FStrongPink
+		unset FSunflowerYellow
+		unset FWaterBlue
+		unset FRed
+		unset FTangerine
+		unset FSunnyYellow
+		unset FKelleyGreen
+		unset FElectricBlue
+		unset FPurple
+		unset FMediumGreen
+		unset FOliveGreen
+		unset FSilver
+		unset FDirtyOrange
+		unset FSunYellow
+		unset FCoolBlue
+		unset FDarkSlateBlue
+		unset FLightSilver
+		unset FPistachio
+		unset DCarnationPink
+		unset FHeliotrope
+		unset FWarmBlue
+
+		unset BFSky
+		unset BFPink
+		unset BFWhite
+		unset BFCanaryYellow
+		unset BFLightPurple
+		unset BFDarkGrey
+		unset BFDeepPink
+		unset BFLightEggPlant
+		unset BFSapphire
+		unset BFRedOrange
+		unset BFFadedOrange
+		unset BFPaleMagenta
+		unset BFDeepMagenta
+		unset BFBrightPink
+		unset BFTeaGreen
+		unset BFAzure
+		unset BFBlack
+		unset BFGrey
+		unset BFDarkPurple
+		unset BFStrongPink
+		unset BFSunflowerYellow
+		unset BFWaterBlue
+		unset BFRed
+		unset BFTangerine
+		unset BFSunnyYellow
+		unset BFKelleyGreen
+		unset BFElectricBlue
+		unset BFPurple
+		unset BFMediumGreen
+		unset BFOliveGreen
+		unset BFSilver
+		unset BFDirtyOrange
+		unset BFSunYellow
+		unset BFCoolBlue
+		unset BFDarkSlateBlue
+		unset BFLightSilver
+		unset BFPistachio
+		unset BFCarnationPink
+		unset BFHeliotrope
+		unset BFWarmBlue
+	fi
+}
+
+flags_rgb
+
 # Trans Flag
-export cbow_trans=("BCyan" "BPurple" "BWhite" "BPurple" "BCyan")
-export cbow_trans_bg=("On_Cyan" "On_Purple" "On_White" "On_Purple" "On_Cyan")
+export cbow_trans=("FSky" "FPink" "FWhite" "FPink" "FSky")
+export cbow_trans_bg=("BFSky" "BFPink" "BFWhite" "BFPink" "BFSky")
 
 # Enby Flag
-export cbow_enby=("BYellow" "BWhite" "Purple" "Black")
-export cbow_enby_bg=("On_Yellow" "On_White" "On_Purple" "On_Black")
+export cbow_enby=("FCanaryYellow" "FWhite" "FLightPurple" "FDarkGrey")
+export cbow_enby_bg=("BFCanaryYellow" "BFWhite" "BFLightPurple" "BFDarkGrey")
 
 # Bisexual Flag
-export cbow_bisexual=("BPurple" "BPurple" "Purple" "BBlue" "BBlue")
-export cbow_bisexual_bg=("On_Purple" "On_Purple" "On_Purple" "On_Blue" "On_Blue")
+export cbow_bisexual=("FDeepPink" "FDeepPink" "FLightEggPlant" "FSapphire" "FSapphire")
+export cbow_bisexual_bg=("BFDeepPink" "BFDeepPink" "BFLightEggPlant" "BFSapphire" "BFSapphire")
 
 # Lesbian Flag
-export cbow_lesbian=("BRed" "Red" "BYellow" "BWhite" "Purple" "BPurple" "BPurple")
-export cbow_lesbian_bg=("On_Red" "On_Red" "On_Yellow" "On_White" "On_Purple" "On_Purple" "On_Purple")
+export cbow_lesbian=("FRedOrange" "FFadedOrange" "FWhite" "FPaleMagenta" "FDeepMagenta")
+export cbow_lesbian_bg=("BFRedOrange" "BFFadedOrange" "BFWhite" "BFPaleMagenta" "BFDeepMagenta")
 
 # Polysexual Flag
-export cbow_polysexual=("BPurple" "Green" "BCyan")
-export cbow_polysexual_bg=("On_Purple" "On_Green" "On_Cyan")
+export cbow_polysexual=("FBrightPink" "FTeaGreen" "FAzure")
+export cbow_polysexual_bg=("BFBrightPink" "BFTeaGreen" "BFAzure")
 
 # Asexual Flag
-export cbow_asexual=("Black" "BBlack" "BWhite" "Purple")
-export cbow_asexual_bg=("On_Black" "On_Black" "On_White" "On_Purple")
+export cbow_asexual=("FBlack" "FGrey" "FWhite" "FDarkPurple")
+export cbow_asexual_bg=("BFBlack" "BFGrey" "BFWhite" "BFDarkPurple")
 
 # Pansexual Flag
-export cbow_pansexual=("BPurple" "Yellow" "BCyan")
-export cbow_pansexual_bg=("On_Purple" "On_Yellow" "On_Cyan")
+export cbow_pansexual=("FStrongPink" "FSunflowerYellow" "FWaterBlue")
+export cbow_pansexual_bg=("BFStrongPink" "BFSunflowerYellow" "BFWaterBlue")
 
 # Queer Flag
-export cbow_queer=("BRed" "Red" "BYellow" "BGreen" "BBlue" "Purple")
-export cbow_queer_bg=("On_Red" "On_Red" "On_Yellow" "On_Green" "On_Blue" "On_Purple")
+export cbow_queer=("FRed" "FTangerine" "FSunnyYellow" "FKelleyGreen" "FElectricBlue" "FPurple")
+export cbow_queer_bg=("BFRed" "BFTangerine" "BFSunnyYellow" "BFKelleyGreen" "BFElectricBlue" "BFPurple")
 
 # Aromantic Flag
-export cbow_aromantic=("BGreen" "Green" "BWhite" "BBlack" "Black")
-export cbow_aromantic_bg=("On_Green" "On_Green" "On_White" "On_Black" "On_Black")
+export cbow_aromantic=("FMediumGreen" "FOliveGreen" "FWhite" "FSilver" "FBlack")
+export cbow_aromantic_bg=("BFMediumGreen" "BFOliveGreen" "BFWhite" "BFSilver" "BFBlack")
 
 # Aroace Flag
-export cbow_aroace=("Yellow" "BYellow" "BWhite" "BCyan" "Cyan")
-export cbow_aroace_bg=("On_Yellow" "On_Yellow" "On_White" "On_Cyan" "On_Cyan")
+export cbow_aroace=("FDirtyOrange" "FSunYellow" "FWhite" "FCoolBlue" "FDarkSlateBlue")
+export cbow_aroace_bg=("BFDirtyOrange" "BFSunYellow" "BFWhite" "BFCoolBlue" "BFDarkSlateBlue")
 
 # Agender Flag
-export cbow_agender=("Black" "BBlack" "BWhite" "Green" "BWhite" "BBlack" "Black")
-export cbow_agender_bg=("On_Black" "On_Black" "On_White" "On_Green" "On_White" "On_Black" "On_Black")
+export cbow_agender=("FBlack" "FLightSilver" "FPistachio" "FLightSilver" "FBlack")
+export cbow_agender_bg=("BFBlack" "BFLightSilver" "BFPistachio" "BFLightSilver" "BFBlack")
 
 # Genderfluid Flag
-export cbow_genderfluid=("BPurple" "BWhite" "Purple" "Black" "Blue")
-export cbow_genderfluid_bg=("On_Purple" "On_White" "On_Purple" "On_Black" "On_Blue")
+export cbow_genderfluid=("FCarnationPink" "FWhite" "FHeliotrope" "FBlack" "FWarmBlue")
+export cbow_genderfluid_bg=("BFCarnationPink" "BFWhite" "BFHeliotrope" "BFBlack" "BFWarmBlue")
 
 # Rainbow Flag
-export cbow_rainbow=("BRed" "Red" "BYellow" "BGreen" "BBlue" "Purple")
-export cbow_rainbow_bg=("On_Red" "On_Red" "On_Yellow" "On_Green" "On_Blue" "On_Purple")
+export cbow_rainbow=("FRed" "FTangerine" "FSunnyYellow" "FKelleyGreen" "FElectricBlue" "FPurple")
+export cbow_rainbow_bg=("BFRed" "BFTangerine" "BFSunnyYellow" "BFKelleyGreen" "BFElectricBlue" "BFPurple")
+
+# White Flag
+export cbow_white=("FWhite")
+export cbow_white_bg=("BFWhite")
+
+# Cyan Flag
+export cbow_cyan=("FSky")
+export cbow_cyan_bg=("BFSky")
+
+# Green Flag
+export cbow_green=("FPistachio")
+export cbow_green_bg=("BFPistachio")
+
+# Red Flag
+export cbow_red=("FRed")
+export cbow_red_bg=("BFRed")
+
+# Yellow Flag
+export cbow_yellow=("FSunnyYellow")
+export cbow_yellow_bg=("BFSunnyYellow")
+
+# Black Flag
+export cbow_black=("FBlack")
+export cbow_black_bg=("BFBlack")
 
 function find_cbow_scheme() {
 	result="-1"
 	count=0
 	for element in "${color_schemes[@]}"; do
-		if [ "${element}" == "${FLAG}" ]; then
+		if [ "${element}" == "$1" ]; then
 			result="$count"
 			break
 		fi
@@ -338,10 +562,19 @@ function find_cbow_scheme() {
 	echo "$result"
 }
 
-export find_flag=$(find_cbow_scheme)
+export find_flag=$(find_cbow_scheme "${FLAG}")
 if [ "$find_flag" == "-1" ]; then
 	echo "Unknown color scheme \`${FLAG}\`!"
 	echo "List available color schemes under \`colors\` command."
+	clean_up
+	exit 404
+fi
+
+export find_flag_bg=$(find_cbow_scheme "${FLAG_BGNAME}")
+if [ "$find_flag_bg" == "-1" ]; then
+	echo "Unknown background color scheme \`${FLAG_BGNAME}\`!"
+	echo "List available color schemes under \`colors\` command."
+	clean_up
 	exit 404
 fi
 
@@ -351,9 +584,11 @@ eval "cbow_array=(\"\${$cbow_array[@]}\")"
 export cbow_array
 
 if [ "${FLAG_BG}" == "1" ]; then
+	export cbow_bg=0
 	cbow_array_bg="cbow_${FLAG_BGNAME}_bg"
 	eval "cbow_array_bg=(\"\${$cbow_array_bg[@]}\")"
 	export cbow_array_bg
+	export cbow_size_bg=${#cbow_array_bg[@]}
 fi
 
 export cbow_size=${#cbow_array[@]}
@@ -365,6 +600,14 @@ function color_bow() {
 		export cbow
 	fi
 	export cbow
+	if [ "${FLAG_BG}" == "1" ]; then
+		let "cbow_bg = cbow_bg + 1"
+		if [ $cbow_bg == $cbow_size_bg ]; then
+			cbow_bg=0
+			export cbow_bg
+		fi
+		export cbow_bg
+	fi
 }
 
 function rainbow() {
@@ -384,7 +627,7 @@ function rainbow() {
 					color_bow $cbow_size
 				fi
 				if [ "$FLAG_BG" == "1" ]; then
-					output_text="${output_text}${!cbow_array_bg[$cbow]}${!cbow_array[$cbow]}${current_char}"
+					output_text="${output_text}${!cbow_array_bg[$cbow_bg]}${!cbow_array[$cbow]}${current_char}"
 				else
 					output_text="${output_text}${!cbow_array[$cbow]}${current_char}"
 				fi
@@ -423,7 +666,8 @@ case "${SCRIPT_TYPE}" in
 		;;
 	*)
 		echo "${BCyan}> ${BRed}Unknown process type!"
-		exit 0
+		clean_up
+		exit 404
 		;;
 esac
 
@@ -528,7 +772,7 @@ function render_interface() {
 		string="$(spacing $tabbing) ${element}: ${TCP_AMOUNT[$count]}"
 		string_size=${#string}
 		if [ "$FLAG_BG" == "1" ]; then
-			string="${!cbow_array_bg[$cbow]}$(spacing $tabbing) $(rainbow ${element})${!cbow_array_bg[$cbow]}${BWhite}: ${BRed}${TCP_AMOUNT[$count]}"
+			string="${!cbow_array_bg[$cbow_bg]}$(spacing $tabbing) $(rainbow ${element})${!cbow_array_bg[$cbow_bg]}${BWhite}: ${BRed}${TCP_AMOUNT[$count]}"
 		else
 			string="$(spacing $tabbing) $(rainbow ${element})${BWhite}: ${BRed}${TCP_AMOUNT[$count]}"
 		fi
