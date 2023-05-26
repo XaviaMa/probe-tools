@@ -150,7 +150,7 @@ if [ -d "$HOME" ]; then
 		process_name=$(ps -p $actual_pid -o comm= | grep -oE '[^/]+$')
 
 		if [ -n "$process_name" ]; then
-			if ! [ "$process_name" == "probe-out" ]; then
+			if ! [ "$process_name" == "$0" ]; then
 				old_date_pid=$(echo "$pids" | rev | cut -f 1 -d "-" | rev)
 				rm -f "$HOME/.cache/xaviama/tcp-probe/probe-tcp-${SCRIPT_TYPE}-pipe-$old_date_pid"
 				rm -f "$pids"
