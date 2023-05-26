@@ -1,10 +1,14 @@
 #!/bin/sh
 
-INTERFACE=${PROBE_INTERFACE:-"lo"}
-ARGS=${PROBE_SRC:-"127.0.0.1"}
-COLOR=${PROBE_COLOR:-1}
-ROOT=${PROBE_ROOT:-1}
-RAINBOW=${PROBE_RAINBOW:-1}
+export INTERFACE=${PROBE_INTERFACE:-"lo"}
+export ARGS=${PROBE_SRC:-"127.0.0.1"}
+export COLOR=${PROBE_COLOR:-1}
+export ROOT=${PROBE_ROOT:-1}
+export RAINBOW=${PROBE_RAINBOW:-1}
+export FLAG=${PROBE_FLAG:-'rainbow'}
+export FLAG_BG=${PROBE_FLAG_BG:-0}
+export FLAG_BGNAME=${PROBE_FLAG_BGNAME:-'rainbow'}
+export FLAG_VERTICAL=${PROBE_FLAG_VERTICAL:-0}
 
 if [ "$(echo $ROOT)" == "1" ] && ! [ "$(whoami)" == "root" ]; then
 	echo "Command must be executed by a root user!"
@@ -27,8 +31,17 @@ if [ "$ARGS" == "127.0.0.1" ] && ! [ -n "$PROBE_SRC" ]; then
 	fi
 fi
 
+export color_schemes=("rainbow" "trans" "queer" "enby" "pansexual" "polysexual" "aroace" "asexual" "aromantic" "agender" "lesbian" "bisexual" "genderfluid")
+
 if [ -n "$1" ]; then
 	case "$1" in
+		"colors")
+			echo "Available color schemes:"
+			for element in "${color_schemes[@]}"; do
+				echo '	- '"${element}"
+			done
+			exit 0
+			;;
 		"log")
 			if ! [ -n "$2" ]; then
 				echo "Missing log ID."
@@ -103,12 +116,17 @@ if [ -n "$1" ]; then
 			echo '	- `PROBE_INTERFACE=<string> | default eth3` - set interface on which `tcpdump` should listen on'
 			echo '	- `PROBE_ROOT=0/1 | default 1` - check if running as root'
 			echo '	- `PROBE_RAINBOW=0/1 | default 1` - enable rainbow texts'
+			echo '	- `PROBE_FLAG=<string> | default rainbow` - set color scheme (list available schemes under `colors` command)'
+			echo '	- `PROBE_FLAG_BG=0/1 | default 0` - render flag in background too'
+			echo '	- `PROBE_FLAG_BGNAME=<string> | default rainbow` - set name for background flag'
+			echo '	- `PROBE_FLAG_VERTICAL=0/1 | default 1` - render flag vertically'
 			echo ""
 			echo '	Commands:'
 			echo '	- `log <ID>` - show log file from ID'
 			echo '	- `rmlog <ID>` - remove specific log'
 			echo '	- `rmlogs` - remove all logs'
 			echo '	- `help` - show help output'
+			echo '	- `colors` - show available color schemes'
 			echo ""
 			echo '© 2023 Chimmie Firefly | Akini License 3.1'
 			exit 0
@@ -255,16 +273,97 @@ function load_colors() {
 
 load_colors
 
+# Trans Flag
+export cbow_trans=("BCyan" "BPurple" "BWhite" "BPurple" "BCyan")
+export cbow_trans_bg=("On_Cyan" "On_Purple" "On_White" "On_Purple" "On_Cyan")
+
+# Enby Flag
+export cbow_enby=("BYellow" "BWhite" "Purple" "Black")
+export cbow_enby_bg=("On_Yellow" "On_White" "On_Purple" "On_Black")
+
+# Bisexual Flag
+export cbow_bisexual=("BPurple" "BPurple" "Purple" "BBlue" "BBlue")
+export cbow_bisexual=("On_Purple" "On_Purple" "On_Purple" "On_Blue" "On_Blue")
+
+# Lesbian Flag
+export cbow_lesbian=("BRed" "Red" "BYellow" "BWhite" "Purple" "BPurple" "BPurple")
+export cbow_lesbian=("On_Red" "On_Red" "On_Yellow" "On_White" "On_Purple" "On_Purple" "On_Purple")
+
+# Polysexual Flag
+export cbow_polysexual=("BPurple" "Green" "BCyan")
+export cbow_polysexual=("On_Purple" "On_Green" "On_Cyan")
+
+# Asexual Flag
+export cbow_asexual=("Black" "BBlack" "BWhite" "Purple")
+export cbow_asexual=("On_Black" "On_Black" "On_White" "On_Purple")
+
+# Pansexual Flag
+export cbow_pansexual=("BPurple" "Yellow" "BCyan")
+export cbow_pansexual=("On_Purple" "On_Yellow" "On_Cyan")
+
+# Queer Flag
+export cbow_queer=("BRed" "Red" "BYellow" "BGreen" "BBlue" "Purple")
+export cbow_queer=("On_Red" "On_Red" "On_Yellow" "On_Green" "On_Blue" "On_Purple")
+
+# Aromantic Flag
+export cbow_aromantic=("BGreen" "Green" "BWhite" "BBlack" "Black")
+export cbow_aromantic=("On_Green" "On_Green" "On_White" "On_Black" "On_Black")
+
+# Aroace Flag
+export cbow_aroace=("Yellow" "BYellow" "BWhite" "BCyan" "Cyan")
+export cbow_aroace=("On_Yellow" "On_Yellow" "On_White" "On_Cyan" "On_Cyan")
+
+# Agender Flag
+export cbow_agender=("Black" "BBlack" "BWhite" "Green" "BWhite" "BBlack" "Black")
+export cbow_agender=("On_Black" "On_Black" "On_White" "On_Green" "On_White" "On_Black" "On_Black")
+
+# Genderfluid Flag
+export cbow_genderfluid=("BPurple" "BWhite" "Purple" "Black" "Blue")
+export cbow_genderfluid_bg=("On_Purple" "On_White" "On_Purple" "On_Black" "On_Blue")
+
+# Rainbow Flag
+export cbow_rainbow=("BRed" "Red" "BYellow" "BGreen" "BBlue" "Purple")
+export cbow_rainbow_bg=("On_Red" "On_Red" "On_Yellow" "On_Green" "On_Blue" "On_Purple")
+
+function find_cbow_scheme() {
+	result="-1"
+	count=0
+	for element in "${color_schemes[@]}"; do
+		if [ "${element}" == "${FLAG}" ]; then
+			result="$count"
+			break
+		fi
+		let "count = count + 1"
+	done
+	echo "$result"
+}
+
+export find_flag=$(find_cbow_scheme)
+if [ "$find_flag" == "-1" ]; then
+	echo "Unknown color scheme \`${FLAG}\`!"
+	echo "List available color schemes under \`colors\` command."
+	exit 404
+fi
+
 export cbow=0
-export cbow_array=("BGreen" "Green" "BYellow" "Yellow" "BRed" "Red" "BPurple" "Purple" "BCyan" "Cyan" "BBlue")
+cbow_array="cbow_${FLAG}"
+eval "cbow_array=(\"\${$cbow_array[@]}\")"
+export cbow_array
+
+if [ "${FLAG_BG}" == "1" ]; then
+	cbow_array_bg="cbow_${FLAG_BGNAME}_bg"
+	eval "cbow_array_bg=(\"\${$cbow_array_bg[@]}\")"
+	export cbow_array_bg
+fi
+
 export cbow_size=${#cbow_array[@]}
 
 function color_bow() {
-	if [ $cbow == $cbow_size ]; then
+	let "cbow = cbow + 1"
+	if [ $cbow == $1 ]; then
 		cbow=0
 		export cbow
 	fi
-	let "cbow = cbow + 1"
 	export cbow
 }
 
@@ -281,8 +380,14 @@ function rainbow() {
 			for (( i=0; i<${#input_text}; i++ )); do
 				# Access each character using parameter expansion
 				current_char="${input_text:i:1}"
-				color_bow
-				output_text="${output_text}${!cbow_array[$cbow]}${current_char}"
+				if [ "$FLAG_VERTICAL" == "1" ]; then
+					color_bow $cbow_size
+				fi
+				if [ "$FLAG_BG" == "1" ]; then
+					output_text="${output_text}${!cbow_array_bg[$cbow]}${!cbow_array[$cbow]}${current_char}"
+				else
+					output_text="${output_text}${!cbow_array[$cbow]}${current_char}"
+				fi
 			done
 			output_text="${output_text}${NC}"
 			echo "$output_text"
@@ -422,16 +527,23 @@ function render_interface() {
 		let "tabbing = tab_x - string_size"
 		string="$(spacing $tabbing) ${element}: ${TCP_AMOUNT[$count]}"
 		string_size=${#string}
-		string="$(spacing $tabbing) $(rainbow ${element})${BWhite}: ${BRed}${TCP_AMOUNT[$count]}"
+		if [ "$FLAG_BG" == "1" ]; then
+			string="${!cbow_array_bg[$cbow]}$(spacing $tabbing) $(rainbow ${element})${!cbow_array_bg[$cbow]}${BWhite}: ${BRed}${TCP_AMOUNT[$count]}"
+		else
+			string="$(spacing $tabbing) $(rainbow ${element})${BWhite}: ${BRed}${TCP_AMOUNT[$count]}"
+		fi
 		let "total_x = total_x + string_size"
+		echo -n "$string"
 		if [ $total_x -gt $tttx ]; then
 			echo ""
 			total_x=10
+			if [ "$FLAG_VERTICAL" == "0" ]; then
+				color_bow $cbow_size
+			fi
 		fi
-		echo -n "$string"
 		let "count = count + 1"
 	done
-	echo ""
+	echo "${NC}"
 	echo ""
 	echo ""
 	echo "$end_label"

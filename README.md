@@ -6,21 +6,9 @@ Uses `tcpdump` - allows analysis of what IPs are fetching/uploading data onto lo
 
 `sudo cp ./bin/* /usr/bin/`
 
-### Environment variables
+### Usage
 
- - `PROBE_COLOR=0/1 | default 1` - set colors for a console
- - `PROBE_SRC=<string> | default 127.0.0.1` - set source destination (for `probe-out`)
- - `PROBE_DST=<string> | default 127.0.0.1` - set destination (for `probe-in`)
- - `PROBE_INTERFACE=<string> | default eth3` - set interface on which `tcpdump` should listen on
- - `PROBE_ROOT=0/1 | default 1` - check if running as root
- - `PROBE_RAINBOW=0/1 | default 1` - enable rainbow texts
-
-### Commands
-
- - `log <ID>` - show log file from ID
- - `rmlog <ID>` - remove specific log
- - `rmlogs` - remove all logs
- - `help` - show help output
+Execute `probe-out help` or `probe-in help` to get available options.
 
 ### Logging
 
